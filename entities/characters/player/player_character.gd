@@ -1,0 +1,81 @@
+class_name PlayerCharacter extends CharacterBody3D
+
+
+@export_group("References")
+@export var fps_camera: Camera3D = null
+
+@export_group("Movement")
+@export_range(1.0, 10.0) var speed: float = 5.0
+@export_range(1.0, 32.0) var acceleration: float = 8.0
+@export_range(1.0, 32.0) var deceleration: float = 16.0
+@export_range(0.01, 10.0) var gravity_scalar: float = 1.0
+@export_range(1.0, 10.0) var jump_velocity: float = 5.0
+@export_range(0.0, 1.0) var air_control: float = 0.2
+
+@export_group("Camera")
+@export_range(0.01, 10.0) var sensitivity_scalar: float = 0.01
+@export_range(0.01, 100.0) var yaw_sensitivity: float = 0.25
+@export_range(0.01, 100.0) var pitch_sensitivity: float = 0.25
+
+const PITCH_CLAMP: float = deg_to_rad(89.0)
+
+var input_direction: Vector2
+var move_direction: Vector3
+
+
+func _init() -> void:
+	Global.player = self
+
+func _ready() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	fps_camera.current = true
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("jump"):
+		handle_jumping()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		handle_look(event)
+
+func _physics_process(delta: float) -> void:
+	apply_gravity(delta)
+	handle_movement(delta)
+
+	apply_final_velocity()
+
+func handle_look(event: InputEvent) -> void:
+	rotate_y((-event.relative.x * yaw_sensitivity) * sensitivity_scalar)
+	fps_camera.rotate_x((-event.relative.y * pitch_sensitivity) * sensitivity_scalar)
+	fps_camera.rotation.x = clampf(fps_camera.rotation.x, -PITCH_CLAMP, PITCH_CLAMP)
+
+func apply_final_velocity() -> void:
+	move_and_slide()
+
+func apply_gravity(delta: float) -> void:
+	if not is_on_floor():
+		velocity += (get_gravity() * gravity_scalar) * delta
+
+func handle_movement(delta: float) -> void:
+	input_direction = Input.get_vector("move_left", "move_right", "move_forwards", "move_backwards")
+	move_direction = (transform.basis * Vector3(input_direction.x, 0, input_direction.y)).normalized()
+
+	#This is repetitive and I should look into simplier approach.
+	if is_on_floor():
+		if move_direction:
+			velocity.x = lerpf(velocity.x, move_direction.x * speed, acceleration * delta)
+			velocity.z = lerpf(velocity.z, move_direction.z * speed, acceleration * delta)
+		else:
+			velocity.x = lerpf(velocity.x, 0.0, deceleration * delta)
+			velocity.z = lerpf(velocity.z, 0.0, deceleration * delta)
+	else:
+		if move_direction:
+			velocity.x = lerpf(velocity.x, move_direction.x * speed, acceleration * delta * air_control)
+			velocity.z = lerpf(velocity.z, move_direction.z * speed, acceleration * delta * air_control)
+		else:
+			velocity.x = lerpf(velocity.x, 0.0, deceleration * delta * air_control)
+			velocity.z = lerpf(velocity.z, 0.0, deceleration * delta * air_control)
+
+func handle_jumping() -> void:
+	if is_on_floor():
+		velocity.y = jump_velocity

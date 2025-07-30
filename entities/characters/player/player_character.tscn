@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://hh86dl705jgx"]
+
+[ext_resource type="Script" uid="uid://dvtcxphjaiwby" path="res://entities/characters/player/player_character.gd" id="1_fis3r"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_uxb5i"]
+radius = 0.3
+
+[node name="PlayerCharacter" type="CharacterBody3D" node_paths=PackedStringArray("fps_camera")]
+script = ExtResource("1_fis3r")
+fps_camera = NodePath("FPSCamera")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_uxb5i")
+debug_color = Color(0, 0.498039, 1, 0.498039)
+
+[node name="FPSCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+fov = 60.0
