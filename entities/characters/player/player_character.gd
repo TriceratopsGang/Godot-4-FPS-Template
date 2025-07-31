@@ -13,11 +13,16 @@ class_name PlayerCharacter extends CharacterBody3D
 @export_range(0.0, 1.0) var air_control: float = 0.2
 
 @export_group("Camera")
-@export_range(0.01, 10.0) var sensitivity_scalar: float = 0.01
-@export_range(0.01, 100.0) var yaw_sensitivity: float = 0.25
-@export_range(0.01, 100.0) var pitch_sensitivity: float = 0.25
+@export_range(0.01, 10.0, 0.01) var sensitivity_scalar: float = 0.01
+@export_range(0.01, 100.0, 0.01) var yaw_sensitivity: float = 0.25
+@export_range(0.01, 100.0, 0.01) var pitch_sensitivity: float = 0.25
+@export_range(38.0, 92.0, 1.0) var default_fov: float = 60.0
+@export_range(1.0, 5.0, 0.1) var zoom_scalar: float = 2.0
+@export_range(1.0, 5.0, 0.1) var zoom_duration: float = 0.2
 
 const PITCH_CLAMP: float = deg_to_rad(89.0)
+const MIN_FOV: float = 18.0
+const MAX_FOV: float = 112.0
 
 var input_direction: Vector2
 var move_direction: Vector3
@@ -28,11 +33,16 @@ func _init() -> void:
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-	fps_camera.current = true
+	adjust_camera_fov(default_fov)
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("jump"):
 		handle_jumping()
+
+	if event.is_action_pressed("zoom"):
+		handle_zooming(true)
+	elif event.is_action_released("zoom"):
+		handle_zooming(false)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -79,3 +89,13 @@ func handle_movement(delta: float) -> void:
 func handle_jumping() -> void:
 	if is_on_floor():
 		velocity.y = jump_velocity
+
+func handle_zooming(state: bool) -> void:
+	var tween: Tween = create_tween()
+	var target_fov: float = default_fov / zoom_scalar if state else default_fov
+
+	tween.tween_method(adjust_camera_fov, fps_camera.fov, target_fov, zoom_duration)
+
+func adjust_camera_fov(value: float) -> void:
+	value = clampf(value, MIN_FOV, MAX_FOV)
+	fps_camera.fov = value
