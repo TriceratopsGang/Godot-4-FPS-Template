@@ -1,16 +1,22 @@
 class_name PlayerCharacter extends CharacterBody3D
 
 
-@export_group("References")
-@export var fps_camera: Camera3D = null
+@export_group("Dependencies")
+@export var fps_camera: Camera3D
+@export var interaction_ray_cast: RayCast3D
+
+@export_group("Functionality")
+@export var knows_jump: bool = true
+@export var knows_zoom: bool = true
+@export var knows_interact: bool = true
 
 @export_group("Movement")
 @export_range(1.0, 10.0) var speed: float = 5.0
 @export_range(1.0, 32.0) var acceleration: float = 8.0
 @export_range(1.0, 32.0) var deceleration: float = 16.0
 @export_range(0.01, 10.0) var gravity_scalar: float = 1.0
-@export_range(1.0, 10.0) var jump_velocity: float = 5.0
-@export_range(0.0, 1.0) var air_control: float = 0.2
+@export_range(1.0, 10.0) var jump_velocity: float = 4.0
+@export_range(0.0, 1.0) var air_control: float = 0.25
 
 @export_group("Camera")
 @export_range(0.01, 10.0, 0.01) var sensitivity_scalar: float = 0.01
@@ -21,11 +27,14 @@ class_name PlayerCharacter extends CharacterBody3D
 @export_range(1.0, 5.0, 0.1) var zoom_duration: float = 0.2
 
 const PITCH_CLAMP: float = deg_to_rad(89.0)
-const MIN_FOV: float = 18.0
-const MAX_FOV: float = 112.0
+const MIN_FOV: float = 10.0
+const MAX_FOV: float = 120.0
 
 var input_direction: Vector2
 var move_direction: Vector3
+
+var current_interactable: Interactable
+var previous_interactable: Interactable
 
 
 func _init() -> void:
@@ -36,17 +45,25 @@ func _ready() -> void:
 	adjust_camera_fov(default_fov)
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("jump"):
-		handle_jumping()
-
-	if event.is_action_pressed("zoom"):
-		handle_zooming(true)
-	elif event.is_action_released("zoom"):
-		handle_zooming(false)
+	if knows_jump:
+		if event.is_action_pressed("jump"):
+			handle_jumping()
+	if knows_zoom:
+		if event.is_action_pressed("zoom"):
+			handle_zooming(true)
+		elif event.is_action_released("zoom"):
+			handle_zooming(false)
+	if knows_interact:
+		if event.is_action_pressed("interact"):
+			handle_interaction()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		handle_look(event)
+
+func _process(_delta: float) -> void:
+	if knows_interact:
+		interaction_trace()
 
 func _physics_process(delta: float) -> void:
 	apply_gravity(delta)
@@ -55,6 +72,7 @@ func _physics_process(delta: float) -> void:
 	apply_final_velocity()
 
 func handle_look(event: InputEvent) -> void:
+	# This will need to be changed. Although very simple, can cause jittering when moving and turning.
 	rotate_y((-event.relative.x * yaw_sensitivity) * sensitivity_scalar)
 	fps_camera.rotate_x((-event.relative.y * pitch_sensitivity) * sensitivity_scalar)
 	fps_camera.rotation.x = clampf(fps_camera.rotation.x, -PITCH_CLAMP, PITCH_CLAMP)
@@ -99,3 +117,24 @@ func handle_zooming(state: bool) -> void:
 func adjust_camera_fov(value: float) -> void:
 	value = clampf(value, MIN_FOV, MAX_FOV)
 	fps_camera.fov = value
+
+func interaction_trace() -> void:
+	#I feel like this can be simplified.
+	var hit = interaction_ray_cast.get_collider() if interaction_ray_cast.is_colliding() else null
+	var new_interactable = null
+	if hit:
+		if hit is Interactable:
+			new_interactable = hit
+		elif hit.get_parent() is Interactable:
+			new_interactable = hit.get_parent()
+	if new_interactable != previous_interactable:
+		if previous_interactable:
+			previous_interactable.set_focus(false)
+		if new_interactable:
+			new_interactable.set_focus(true)
+		previous_interactable = new_interactable
+	current_interactable = new_interactable
+
+func handle_interaction() -> void:
+	if current_interactable == null: return
+	current_interactable.interact_with(self)

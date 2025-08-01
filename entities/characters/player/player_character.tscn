@@ -5,9 +5,10 @@
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_uxb5i"]
 radius = 0.3
 
-[node name="PlayerCharacter" type="CharacterBody3D" node_paths=PackedStringArray("fps_camera")]
+[node name="PlayerCharacter" type="CharacterBody3D" node_paths=PackedStringArray("fps_camera", "interaction_ray_cast") groups=["player"]]
 script = ExtResource("1_fis3r")
 fps_camera = NodePath("FPSCamera")
+interaction_ray_cast = NodePath("FPSCamera/InteractionRayCast")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -17,3 +18,7 @@ debug_color = Color(0, 0.498039, 1, 0.498039)
 [node name="FPSCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
 fov = 60.0
+
+[node name="InteractionRayCast" type="RayCast3D" parent="FPSCamera"]
+target_position = Vector3(0, 0, -3)
+debug_shape_custom_color = Color(0, 1, 0, 1)
