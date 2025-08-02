@@ -3,7 +3,9 @@ class_name PlayerCharacter extends CharacterBody3D
 
 @export_group("Dependencies")
 @export var fps_camera: Camera3D
+@export var col_shape: CollisionShape3D
 @export var interaction_ray_cast: RayCast3D
+@export var crouch_shape_cast: ShapeCast3D
 
 @export_group("Functionality")
 @export var knows_jump: bool = true
@@ -11,12 +13,12 @@ class_name PlayerCharacter extends CharacterBody3D
 @export var knows_interact: bool = true
 
 @export_group("Movement")
-@export_range(1.0, 10.0) var speed: float = 5.0
-@export_range(1.0, 32.0) var acceleration: float = 8.0
-@export_range(1.0, 32.0) var deceleration: float = 16.0
-@export_range(0.01, 10.0) var gravity_scalar: float = 1.0
-@export_range(1.0, 10.0) var jump_velocity: float = 4.0
-@export_range(0.0, 1.0) var air_control: float = 0.25
+@export_range(1.0, 10.0, 0.1) var speed: float = 5.0
+@export_range(1.0, 32.0, 0.1) var acceleration: float = 8.0
+@export_range(1.0, 32.0, 0.1) var deceleration: float = 16.0
+@export_range(0.01, 10.0, 0.1) var gravity_scalar: float = 1.0
+@export_range(1.0, 10.0, 0.1) var jump_velocity: float = 4.0
+@export_range(0.0, 1.0, 0.1) var air_control: float = 0.25
 
 @export_group("Camera")
 @export_range(0.01, 10.0, 0.01) var sensitivity_scalar: float = 0.01
@@ -26,13 +28,16 @@ class_name PlayerCharacter extends CharacterBody3D
 @export_range(1.0, 5.0, 0.1) var zoom_scalar: float = 2.0
 @export_range(1.0, 5.0, 0.1) var zoom_duration: float = 0.2
 
+#Camera
 const PITCH_CLAMP: float = deg_to_rad(89.0)
 const MIN_FOV: float = 10.0
 const MAX_FOV: float = 120.0
 
+#Movement
 var input_direction: Vector2
 var move_direction: Vector3
 
+#Interaction
 var current_interactable: Interactable
 var previous_interactable: Interactable
 
@@ -48,11 +53,13 @@ func _input(event: InputEvent) -> void:
 	if knows_jump:
 		if event.is_action_pressed("jump"):
 			handle_jumping()
+
 	if knows_zoom:
 		if event.is_action_pressed("zoom"):
 			handle_zooming(true)
 		elif event.is_action_released("zoom"):
 			handle_zooming(false)
+
 	if knows_interact:
 		if event.is_action_pressed("interact"):
 			handle_interaction()

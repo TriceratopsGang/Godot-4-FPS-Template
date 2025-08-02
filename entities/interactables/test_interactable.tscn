@@ -1,17 +1,26 @@
-[gd_scene load_steps=4 format=3 uid="uid://h6b2ofxiypvb"]
+[gd_scene load_steps=7 format=3 uid="uid://h6b2ofxiypvb"]
 
 [ext_resource type="Script" uid="uid://2i0vft4va447" path="res://entities/interactables/interactable.gd" id="1_lshio"]
+[ext_resource type="Texture2D" uid="uid://cxypdn23o07h3" path="res://assets/textures/dev_256_green_0.png" id="2_4tyat"]
+[ext_resource type="Material" uid="uid://c53sxqo4ofmrf" path="res://resources/materials/mat_interactable_highlight.tres" id="2_bs5rv"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_lshio"]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bs5rv"]
+albedo_texture = ExtResource("2_4tyat")
+
 [sub_resource type="BoxMesh" id="BoxMesh_p2v66"]
+lightmap_size_hint = Vector2i(14, 21)
+add_uv2 = true
 
 [node name="TestInteractable" type="StaticBody3D" node_paths=PackedStringArray("mesh")]
 script = ExtResource("1_lshio")
 mesh = NodePath("MeshInstance3D")
+highlight_material = ExtResource("2_bs5rv")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("BoxShape3D_lshio")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+material_override = SubResource("StandardMaterial3D_bs5rv")
 mesh = SubResource("BoxMesh_p2v66")
