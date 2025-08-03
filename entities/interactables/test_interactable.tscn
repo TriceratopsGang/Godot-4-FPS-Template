@@ -13,7 +13,7 @@ albedo_texture = ExtResource("2_4tyat")
 lightmap_size_hint = Vector2i(14, 21)
 add_uv2 = true
 
-[node name="TestInteractable" type="StaticBody3D" node_paths=PackedStringArray("mesh")]
+[node name="TestInteractable" type="StaticBody3D" node_paths=PackedStringArray("mesh") groups=["interactable"]]
 script = ExtResource("1_lshio")
 mesh = NodePath("MeshInstance3D")
 highlight_material = ExtResource("2_bs5rv")

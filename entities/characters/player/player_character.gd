@@ -3,17 +3,20 @@ class_name PlayerCharacter extends CharacterBody3D
 
 @export_group("Dependencies")
 @export var fps_camera: Camera3D
-@export var col_shape: CollisionShape3D
+@export var standing_collision_shape: CollisionShape3D
+@export var crouching_collision_shape: CollisionShape3D
 @export var interaction_ray_cast: RayCast3D
 @export var crouch_shape_cast: ShapeCast3D
 
 @export_group("Functionality")
 @export var knows_jump: bool = true
+@export var knows_crouch: bool = true
 @export var knows_zoom: bool = true
 @export var knows_interact: bool = true
 
 @export_group("Movement")
-@export_range(1.0, 10.0, 0.1) var speed: float = 5.0
+@export_range(1.0, 10.0, 0.1) var walk_speed: float = 5.0
+@export_range(1.0, 10.0, 0.1) var crouch_speed: float = 2.0
 @export_range(1.0, 32.0, 0.1) var acceleration: float = 8.0
 @export_range(1.0, 32.0, 0.1) var deceleration: float = 16.0
 @export_range(0.01, 10.0, 0.1) var gravity_scalar: float = 1.0
@@ -32,10 +35,15 @@ class_name PlayerCharacter extends CharacterBody3D
 const PITCH_CLAMP: float = deg_to_rad(89.0)
 const MIN_FOV: float = 10.0
 const MAX_FOV: float = 120.0
+#Camera|Crouching
+const CAM_STAND_HEIGHT: float = 1.5
+const CAM_CROUCH_HEIGHT: float = 0.6
 
 #Movement
 var input_direction: Vector2
 var move_direction: Vector3
+#Movement|Crouching
+var is_crouching: bool
 
 #Interaction
 var current_interactable: Interactable
@@ -53,6 +61,10 @@ func _input(event: InputEvent) -> void:
 	if knows_jump:
 		if event.is_action_pressed("jump"):
 			handle_jumping()
+
+	if knows_crouch:
+		if event.is_action_pressed("crouch"):
+			handle_crouching()
 
 	if knows_zoom:
 		if event.is_action_pressed("zoom"):
@@ -91,6 +103,9 @@ func apply_gravity(delta: float) -> void:
 	if not is_on_floor():
 		velocity += (get_gravity() * gravity_scalar) * delta
 
+func get_move_speed() -> float:
+	return crouch_speed if is_crouching else walk_speed
+
 func handle_movement(delta: float) -> void:
 	input_direction = Input.get_vector("move_left", "move_right", "move_forwards", "move_backwards")
 	move_direction = (transform.basis * Vector3(input_direction.x, 0, input_direction.y)).normalized()
@@ -98,15 +113,15 @@ func handle_movement(delta: float) -> void:
 	#This is repetitive and I should look into simplier approach.
 	if is_on_floor():
 		if move_direction:
-			velocity.x = lerpf(velocity.x, move_direction.x * speed, acceleration * delta)
-			velocity.z = lerpf(velocity.z, move_direction.z * speed, acceleration * delta)
+			velocity.x = lerpf(velocity.x, move_direction.x * get_move_speed(), acceleration * delta)
+			velocity.z = lerpf(velocity.z, move_direction.z * get_move_speed(), acceleration * delta)
 		else:
 			velocity.x = lerpf(velocity.x, 0.0, deceleration * delta)
 			velocity.z = lerpf(velocity.z, 0.0, deceleration * delta)
 	else:
 		if move_direction:
-			velocity.x = lerpf(velocity.x, move_direction.x * speed, acceleration * delta * air_control)
-			velocity.z = lerpf(velocity.z, move_direction.z * speed, acceleration * delta * air_control)
+			velocity.x = lerpf(velocity.x, move_direction.x * get_move_speed(), acceleration * delta * air_control)
+			velocity.z = lerpf(velocity.z, move_direction.z * get_move_speed(), acceleration * delta * air_control)
 		else:
 			velocity.x = lerpf(velocity.x, 0.0, deceleration * delta * air_control)
 			velocity.z = lerpf(velocity.z, 0.0, deceleration * delta * air_control)
@@ -114,6 +129,14 @@ func handle_movement(delta: float) -> void:
 func handle_jumping() -> void:
 	if is_on_floor():
 		velocity.y = jump_velocity
+
+func handle_crouching() -> void:
+	if is_crouching and crouch_shape_cast.is_colliding(): return
+
+	is_crouching = !is_crouching
+	crouching_collision_shape.disabled = not is_crouching
+	standing_collision_shape.disabled = is_crouching
+	fps_camera.position.y = CAM_CROUCH_HEIGHT if is_crouching else CAM_STAND_HEIGHT
 
 func handle_zooming(state: bool) -> void:
 	var tween: Tween = create_tween()

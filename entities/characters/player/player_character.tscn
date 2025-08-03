@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://hh86dl705jgx"]
+[gd_scene load_steps=5 format=3 uid="uid://hh86dl705jgx"]
 
 [ext_resource type="Script" uid="uid://dvtcxphjaiwby" path="res://entities/characters/player/player_character.gd" id="1_fis3r"]
 
@@ -6,19 +6,30 @@
 radius = 0.3
 height = 1.8
 
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_fis3r"]
+radius = 0.3
+height = 0.9
+
 [sub_resource type="SphereShape3D" id="SphereShape3D_fis3r"]
 radius = 0.3
 
-[node name="PlayerCharacter" type="CharacterBody3D" node_paths=PackedStringArray("fps_camera", "interaction_ray_cast", "crouch_shape_cast") groups=["player"]]
+[node name="PlayerCharacter" type="CharacterBody3D" node_paths=PackedStringArray("fps_camera", "standing_collision_shape", "crouching_collision_shape", "interaction_ray_cast", "crouch_shape_cast") groups=["player"]]
 script = ExtResource("1_fis3r")
 fps_camera = NodePath("FPSCamera")
+standing_collision_shape = NodePath("StandingCollisionShape")
+crouching_collision_shape = NodePath("CrouchingCollisionShape")
 interaction_ray_cast = NodePath("FPSCamera/InteractionRayCast")
 crouch_shape_cast = NodePath("CrouchShapeCast")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="StandingCollisionShape" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_uxb5i")
 debug_color = Color(0, 0.498039, 1, 0.498039)
+
+[node name="CrouchingCollisionShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("CapsuleShape3D_fis3r")
+debug_color = Color(0, 1, 0.498039, 0.498039)
 
 [node name="FPSCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.50012, 0)
